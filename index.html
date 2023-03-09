@@ -7,16 +7,16 @@
 
   <script type="module">
     document.addEventListener('contextmenu', event => event.preventDefault());
-    import { default as init, send_example_to_js, receive_example_from_js } from './out/bevy_webtest.js';
+    import { default as init, send_example_to_js, js_event} from './out/bevy_js_cmd.js';
     init();
 
     function log() {
       let example = send_example_to_js();
       console.log(example);
-      receive_example_from_js({Print: 'hello'});
+      js_event({Print: 'hello'});
     }
     function toggle() {
-      receive_example_from_js('Toggle');
+      js_event('Toggle');
     }
 
     document.getElementById ("btnget").addEventListener ("click", log);
