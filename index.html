@@ -7,7 +7,7 @@
 
   <script type="module">
     document.addEventListener('contextmenu', event => event.preventDefault());
-    import { default as init, send_example_to_js, js_event} from './out/bevy_js_cmd.js';
+    import init, {js_event} from './out/bevy_js_cmd.js';
     init();
 
     function log() {
@@ -18,9 +18,19 @@
     function toggle() {
       js_event('Toggle');
     }
+    function print(text) {
+      console.log(text);
+    }
 
     document.getElementById ("btnget").addEventListener ("click", log);
     document.getElementById ("btntoggle").addEventListener ("click", toggle);
+    window.addEventListener(
+      "message",
+      (event) => {
+        print(event)
+      },
+    false
+    );
   </script>
 
 </body>

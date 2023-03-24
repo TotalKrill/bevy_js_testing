@@ -19,11 +19,23 @@ pub enum Command {
     Print(String),
 }
 
-#[wasm_bindgen]
-pub fn send_example_to_js() -> JsValue {
-    let cmd = Command::Print("hello".into());
+#[derive(Resource, Debug, Serialize, Deserialize)]
+pub enum PostEvent {
+    Test(String),
+    AFloat(f32),
+}
 
-    serde_wasm_bindgen::to_value(&cmd).unwrap()
+/// system that sends postMessage to the parent window
+pub fn postmessage_to_parent(mut postevt: EventReader<PostEvent>) {
+    for evt in postevt.iter() {
+        if let Some(window) = web_sys::window() {
+            if let Ok(Some(parent)) = window.parent() {
+                parent.post_message(&serde_wasm_bindgen::to_value(evt).unwrap(), "*");
+            } else {
+                window.post_message(&serde_wasm_bindgen::to_value(evt).unwrap(), "*");
+            }
+        }
+    }
 }
 
 #[wasm_bindgen]
@@ -62,9 +74,11 @@ fn main() {
     App::new()
         .insert_resource(ReceiverResource { rx })
         .add_plugins(DefaultPlugins)
+        .add_event::<PostEvent>()
         .add_startup_system(setup)
         .add_system(sprite_movement)
         .add_system(toggle_js)
+        .add_system(postmessage_to_parent)
         .run();
 }
 
@@ -92,7 +106,11 @@ fn setup(
 
 /// The sprite is animated by changing its translation depending on the time that has passed since
 /// the last frame.
-fn sprite_movement(time: Res<Time>, mut sprite_position: Query<(&mut Direction, &mut Transform)>) {
+fn sprite_movement(
+    time: Res<Time>,
+    mut evt: EventWriter<PostEvent>,
+    mut sprite_position: Query<(&mut Direction, &mut Transform)>,
+) {
     for (mut logo, mut transform) in &mut sprite_position {
         match *logo {
             Direction::Up => transform.translation.y += 150. * time.delta_seconds(),
@@ -100,8 +118,10 @@ fn sprite_movement(time: Res<Time>, mut sprite_position: Query<(&mut Direction, 
         }
 
         if transform.translation.y > 200. {
+            evt.send(PostEvent::Test(format!("goin Down!")));
             *logo = Direction::Down;
         } else if transform.translation.y < -200. {
+            evt.send(PostEvent::Test(format!("goin Up!")));
             *logo = Direction::Up;
         }
     }
