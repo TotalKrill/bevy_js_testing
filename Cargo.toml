@@ -13,6 +13,8 @@ web-sys = "0.3.61"
 async-std = "1.12.0"
 once_cell = "1.17.1"
 wasm-bindgen-futures = "0.4.34"
+crossbeam = "0.8.2"
+gloo = "0.8"
 
 [dependencies.bevy]
 version = "0.9.1"

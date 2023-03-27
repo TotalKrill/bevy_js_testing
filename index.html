@@ -1,28 +1,25 @@
 <!DOCTYPE html>
 <html>
 <body>
+<html>
+<body>
 
 <input type="button" id="btnget" style="z-index:2; position:absolute; top:100px; left:100px;" value="test" />
 <input type="button" id="btntoggle" style="z-index:2; position:absolute; top:120px; left:100px;" value="toggle" />
 
   <script type="module">
     document.addEventListener('contextmenu', event => event.preventDefault());
-    import init, {js_event} from './out/bevy_js_cmd.js';
+    import init from './out/bevy_js_cmd.js';
     init();
 
-    function log() {
-      let example = send_example_to_js();
-      console.log(example);
-      js_event({Print: 'hello'});
-    }
     function toggle() {
-      js_event('Toggle');
+      window.postMessage('Toggle');
     }
     function print(text) {
       console.log(text);
     }
 
-    document.getElementById ("btnget").addEventListener ("click", log);
+    // document.getElementById ("btnget").addEventListener ("click", log);
     document.getElementById ("btntoggle").addEventListener ("click", toggle);
     window.addEventListener(
       "message",
@@ -33,5 +30,7 @@
     );
   </script>
 
+</body>
+</html>
 </body>
 </html>
