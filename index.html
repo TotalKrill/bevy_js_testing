@@ -4,8 +4,10 @@
 <html>
 <body>
 
-<input type="button" id="btnget" style="z-index:2; position:absolute; top:100px; left:100px;" value="test" />
+<input type="button" id="btntest" style="z-index:2; position:absolute; top:100px; left:100px;" value="test" />
 <input type="button" id="btntoggle" style="z-index:2; position:absolute; top:120px; left:100px;" value="toggle" />
+<input type="button" id="btntest2" style="z-index:2; position:absolute; top:140px; left:100px;" value="test2" />
+<input type="button" id="btntoggle2" style="z-index:2; position:absolute; top:160px; left:100px;" value="toggle2" />
 
   <script type="module">
     document.addEventListener('contextmenu', event => event.preventDefault());
@@ -13,21 +15,23 @@
     init();
 
     function toggle() {
-      window.postMessage('Toggle');
+      window.postMessage('"Toggle"');
     }
     function print(text) {
-      console.log(text);
+      window.postMessage('{"Print":"hello"}');
     }
 
-    // document.getElementById ("btnget").addEventListener ("click", log);
+    function toggle2() {
+      window.postMessage("Toggle");
+    }
+    function print2(text) {
+      window.postMessage({"print": "Hello"});
+    }
+
+    document.getElementById ("btntest").addEventListener ("click", print);
     document.getElementById ("btntoggle").addEventListener ("click", toggle);
-    window.addEventListener(
-      "message",
-      (event) => {
-        print(event)
-      },
-    false
-    );
+    document.getElementById ("btntest2").addEventListener ("click", print2);
+    document.getElementById ("btntoggle2").addEventListener ("click", toggle2);
   </script>
 
 </body>

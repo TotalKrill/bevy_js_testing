@@ -31,13 +31,13 @@ mod web_communication {
     }
 
     /// system that sends postMessage to the parent window
-    pub fn postmessage_to_parent<OUTPUT: Send + Sync + Event + Serialize>(
+    pub fn postmessage_to_parent<OUTPUT: std::fmt::Debug + Send + Sync + Event + Serialize>(
         mut postevt: EventReader<OUTPUT>,
     ) {
         for evt in postevt.iter() {
             if let Some(window) = web_sys::window() {
                 if let Ok(Some(parent)) = window.top() {
-                    // gloo::console::log!(format!("{name:?}"));
+                    // gloo::console::log!(format!("{evt:?}"));
                     if parent != window {
                         parent
                             .post_message(&serde_wasm_bindgen::to_value(evt).unwrap(), "*")
@@ -91,8 +91,8 @@ mod web_communication {
 
     impl<INPUT, OUTPUT> Plugin for WebPostMessage<INPUT, OUTPUT>
     where
-        INPUT: Send + Sync + Event + DeserializeOwned,
-        OUTPUT: Send + Sync + Event + Serialize,
+        INPUT: Send + Sync + Event + DeserializeOwned + std::fmt::Debug,
+        OUTPUT: Send + Sync + Event + Serialize + std::fmt::Debug,
     {
         fn build(&self, app: &mut App) {
             let (tx, rx) = unbounded::<INPUT>();
@@ -109,11 +109,41 @@ mod web_communication {
                 "message",
                 move |event| {
                     let event = event.dyn_ref::<web_sys::MessageEvent>().unwrap_throw();
+
+                    // Alternative 1, alwasy input strings but force them to be JSON ( or other format that we define)
+                    // ``` js
+                    // window.postMessage('"Toggle"')          -> Command::Toggle
+                    // window.postMessage('{"Print":"hello"}') -> Command::Print("hello".into())
+                    // ```
+                    match event.data().clone().as_string() {
+                        Some(datastr) => match serde_json::from_str::<INPUT>(&datastr) {
+                            Ok(val) => {
+                                gloo::console::log!(format!("got Alt1: {val:?}"));
+                                tx.send(val);
+                            }
+                            Err(e) => {
+                                gloo::console::log!(format!(
+                                    "Alt1 Failed parsing incoming string as JSON: {:?}",
+                                    e
+                                ));
+                            }
+                        },
+                        None => {
+                            gloo::console::log!("Alt1 fails: incoming data was not a string");
+                        }
+                    }
+
+                    // Alternative 2, always assume that the incoming stuff is pure JavaScript objects, where String is one type of object. When INPUT = Command
+                    //  ``` js
+                    //  window.postMessage("Toggle")          -> Command::Toggle
+                    //  window.postMessage({"Print":"hello"}) -> Command::Print("hello".into())
+                    //  ```
                     match serde_wasm_bindgen::from_value::<INPUT>(event.data()) {
                         Ok(cmd) => {
+                            gloo::console::log!(format!("got Alt2: {cmd:?}"));
                             tx.send(cmd);
                         }
-                        Err(e) => gloo::console::log!(format!("{e:?}")),
+                        Err(e) => gloo::console::log!(format!("Alt2 fails")),
                     }
                 },
             )
@@ -172,6 +202,10 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
+    // let v = serde_wasm_bindgen::to_value(&Command::Print("hello".into())).unwrap();
+    // gloo::console::log!(format!("{v:?}"));
+    // let v = serde_wasm_bindgen::from_value::<Command>(v);
+
     commands.spawn(Camera2dBundle::default());
     commands
         .spawn(MaterialMesh2dBundle {
@@ -198,6 +232,7 @@ fn sprite_movement(
 
         if transform.translation.y > 200. {
             evt.send(PostEvent::Test(format!("goin Down!")));
+            evt.send(PostEvent::AFloat(transform.translation.y));
             *logo = Direction::Down;
         } else if transform.translation.y < -200. {
             evt.send(PostEvent::Test(format!("goin Up!")));
